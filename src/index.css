@@ -1,0 +1,37 @@
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body{
+  background-color: #19875475;
+}
+
+.main {
+     margin-left: 220px;
+     padding: 85px 15px 15px 15px;
+}
+.main .nav-bar {
+     position: fixed;
+     top:0;
+     left:0;
+     right:0;
+     margin-left:220px;
+}
+
+@media(max-width:991px){
+  .sidebar{
+    transform: translate(-100%);
+  }
+  .sidebar.show{
+    transform: translate(0%);
+  }
+  .main {
+     margin-left:0px;
+}
+.main .nav-bar {
+  margin-left:0px;
+}
+
+
+}
