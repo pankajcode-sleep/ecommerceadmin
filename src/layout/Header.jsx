@@ -37,6 +37,11 @@ function Header({ toggleSidebar }) {
                                         Logout
                                     </button>
                                 </li>
+                                <li>
+                                    <button className="dropdown-item">
+                                        testing
+                                    </button>
+                                </li>
                             </ul>
                         </div>
 
