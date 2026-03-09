@@ -10,6 +10,8 @@ import AddCategory from './pages/AddCategory';
 import ViewCategory from './pages/ViewCategory';
 import AddSubCategory from './pages/AddSubCategory';
 import ViewSubCategory from './pages/ViewSubCategory';
+import AddProducts from './pages/AddProducts';
+import ViewProducts from './pages/ViewProducts';
 
 
 function App() {
@@ -34,8 +36,12 @@ function App() {
         <Route path="view-category" element={<ViewCategory/>} />
         <Route path="add-sub-category" element={<AddSubCategory/>} />
         <Route path="view-sub-category" element={<ViewSubCategory/>} />
-        {/* <Route path="add-product" element={<AddSubCategory/>} />
-        <Route path="view-product" element={<ViewSubCategory/>} /> */}
+        <Route path="add-product" element={<AddProducts/>} />
+        <Route path="view-product" element={<ViewProducts/>} />
+        <Route path="/add-subcategory/:id" element={<AddSubCategory />} />
+        <Route path="add-product/:id" element={<AddProducts/>} />
+
+        
       </Route>
 
       </>

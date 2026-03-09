@@ -1,60 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+
+const BASE_URL = "https://demo-ecommerce-api.vironixsolutions.com";
 
 function AddSubCategory() {
     const { id } = useParams();
     const navigate = useNavigate();
 
-
     const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(false);
+
     const [formData, setFormData] = useState({
         category_id: "",
         name: "",
         description: "",
     });
-    useEffect(() => {
-        const fetchItems = async () => {
-            const token = localStorage.getItem("token");
-
-            try {
-                const response = await fetch(
-                    "https://demo-ecommerce-api.vironixsolutions.com/api/admin/category",
-                    {
-                        method: "GET",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
-
-                const data = await response.json();
-                setItems(data);
-            } catch (error) {
-                console.error(error);
-                toast.error("Failed to fetch category groups");
-            }
-        };
-
-        fetchItems();
-    }, []);
-
-
-
-
 
   
-
-
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
-    };
     useEffect(() => {
         const token = localStorage.getItem("token");
 
@@ -64,37 +29,83 @@ function AddSubCategory() {
             return;
         }
 
+        fetchCategories(token);
+
         if (id) {
-            axios
-                .get(
-                    `https://demo-ecommerce-api.vironixsolutions.com/api/admin/category/sub/${id}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                )
-                .then((res) => {
-                    setFormData({
-                        category_id: res.data.category_id || "",
-                        name: res.data.name || "",
-                        description: res.data.description || "",
-                    });
-                })
-                .catch((err) => {
-                    toast.error("Failed to fetch category ❌");
-                    console.log(err);
-                });
+            fetchSubCategory(token);
         }
-    }, [id, navigate]);
+    }, [id]);
+
+  
+    const fetchCategories = async (token) => {
+        try {
+            const res = await axios.get(
+                `${BASE_URL}/api/admin/category`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            const categories =
+                res.data?.data ||
+                res.data?.categories ||
+                res.data ||
+                [];
+
+            setItems(Array.isArray(categories) ? categories : []);
+        } catch (error) {
+            toast.error("Failed to fetch categories");
+        }
+    };
+
+  
+    const fetchSubCategory = async (token) => {
+        try {
+            setLoading(true);
+
+            const res = await axios.get(
+                `${BASE_URL}/api/admin/category/sub/${id}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            const sub = res.data?.data || res.data;
+
+            setFormData({
+                category_id: sub?.category_id || "",
+                name: sub?.name || "",
+                description: sub?.description || "",
+            });
+        } catch (error) {
+            toast.error("Failed to fetch subcategory");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         const token = localStorage.getItem("token");
 
         try {
             if (id) {
                 await axios.put(
-                    `https://demo-ecommerce-api.vironixsolutions.com/api/admin/category/sub/${id}`,
+                    `${BASE_URL}/api/admin/category/sub/${id}`,
                     formData,
                     {
                         headers: {
@@ -102,10 +113,10 @@ function AddSubCategory() {
                         },
                     }
                 );
-                toast.success("Category Updated Successfully");
+                toast.success("SubCategory Updated Successfully");
             } else {
                 await axios.post(
-                    "https://demo-ecommerce-api.vironixsolutions.com/api/admin/category/sub",
+                    `${BASE_URL}/api/admin/category/sub`,
                     formData,
                     {
                         headers: {
@@ -113,31 +124,31 @@ function AddSubCategory() {
                         },
                     }
                 );
-                toast.success("Category Added Successfully");
-                setFormData({
-                    category_id: "",
-                    name: "",
-                    description: "",
-                });
+                toast.success("SubCategory Added Successfully");
             }
 
+            navigate("/view-sub-category");
         } catch (error) {
-            toast.error("Something went wrong");
-            console.error(error);
+            toast.error(
+                error.response?.data?.message || "Something went wrong"
+            );
         }
     };
+
+    if (loading) return <div>Loading...</div>;
 
     return (
         <>
             <div className="card">
                 <div className="card-header">
-                    {id ? "Update Category" : "Add Category"}
+                    {id ? "Update SubCategory" : "Add SubCategory"}
                 </div>
 
                 <div className="card-body">
                     <form onSubmit={handleSubmit} className="row">
+
                         <div className="col-md-6 mb-4">
-                            <label className="form-label">Category Group</label>
+                            <label className="form-label">Category</label>
                             <select
                                 name="category_id"
                                 className="form-control"
@@ -145,14 +156,19 @@ function AddSubCategory() {
                                 onChange={handleChange}
                                 required
                             >
-                                <option value="">Select Category Group</option>
+                                <option value="">Select Category</option>
+
                                 {items.map((item) => (
-                                    <option key={item.id} value={item.id}>
+                                    <option
+                                        key={item.id || item._id}
+                                        value={item.id || item._id}
+                                    >
                                         {item.name}
                                     </option>
                                 ))}
                             </select>
                         </div>
+
                         <div className="col-md-6 mb-4">
                             <label className="form-label">Name</label>
                             <input
@@ -161,31 +177,33 @@ function AddSubCategory() {
                                 className="form-control"
                                 value={formData.name}
                                 onChange={handleChange}
-                                placeholder="Name"
                                 required
                             />
                         </div>
+
                         <div className="col-md-6 mb-4">
                             <label className="form-label">Description</label>
-                            <input
-                                type="text"
+                            <textarea
                                 name="description"
                                 className="form-control"
                                 value={formData.description}
                                 onChange={handleChange}
-                                placeholder="Description"
                                 required
                             />
                         </div>
-                        <div className="col-md-6 m-2">
-                            <button type="submit" className="btn btn-primary btn-sm">
+
+                        <div className="col-md-6 mt-2">
+                            <button
+                                type="submit"
+                                className="btn btn-primary btn-sm"
+                            >
                                 {id ? "Update" : "Add"}
                             </button>
                         </div>
+
                     </form>
                 </div>
             </div>
-
             <ToastContainer />
         </>
     );

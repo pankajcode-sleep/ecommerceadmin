@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import {
+    addCategory,
+    editCategory,
+    viewCategoryGroup,
+    viewCategoryById
+} from "../services/api";
 function AddCategory() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -14,38 +18,13 @@ function AddCategory() {
         name: "",
         description: "",
     });
-    useEffect(() => {
-        const fetchItems = async () => {
-            const token = localStorage.getItem("token");
-
-            try {
-                const response = await fetch(
-                    "https://demo-ecommerce-api.vironixsolutions.com/api/admin/category/group",
-                    {
-                        method: "GET",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
-
-                const data = await response.json();
-                setItems(data);
-            } catch (error) {
-                console.error(error);
-                toast.error("Failed to fetch category groups");
-            }
-        };
-
-        fetchItems();
-    }, []);
-
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
+        const { name, value } = e.target;
+
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
     };
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -55,57 +34,41 @@ function AddCategory() {
             navigate("/login");
             return;
         }
-
+        viewCategoryGroup()
+            .then((res) => {
+                setItems(res.data || []);
+            })
+            .catch((err) => {
+                toast.error("Failed to load category groups");
+            });
         if (id) {
-            axios
-                .get(
-                    `https://demo-ecommerce-api.vironixsolutions.com/api/admin/category/${id}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                )
+            viewCategoryById(id)
                 .then((res) => {
+                    const category = res.data.data;
+
                     setFormData({
-                        category_group_id: res.data.category_group_id || "",
-                        name: res.data.name || "",
-                        description: res.data.description || "",
+                        category_group_id: category.category_group_id || "",
+                        name: category.name || "",
+                        description: category.description || "",
                     });
                 })
                 .catch((err) => {
-                    toast.error("Failed to fetch category ❌");
                     console.log(err);
+                    toast.error("Failed to fetch category");
                 });
         }
     }, [id, navigate]);
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const token = localStorage.getItem("token");
 
         try {
             if (id) {
-                await axios.put(
-                    `https://demo-ecommerce-api.vironixsolutions.com/api/admin/category/${id}`,
-                    formData,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
+                await editCategory(id, formData);
                 toast.success("Category Updated Successfully");
             } else {
-                await axios.post(
-                    "https://demo-ecommerce-api.vironixsolutions.com/api/admin/category/",
-                    formData,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
+                await addCategory(formData);
                 toast.success("Category Added Successfully");
+
                 setFormData({
                     category_group_id: "",
                     name: "",
@@ -113,9 +76,12 @@ function AddCategory() {
                 });
             }
 
+            setTimeout(() => {
+                navigate("/view-category");
+            }, 1000);
         } catch (error) {
-            toast.error("Something went wrong");
             console.error(error);
+            toast.error("Something went wrong");
         }
     };
 
@@ -145,6 +111,7 @@ function AddCategory() {
                                 ))}
                             </select>
                         </div>
+
                         <div className="col-md-6 mb-4">
                             <label className="form-label">Name</label>
                             <input
@@ -153,10 +120,11 @@ function AddCategory() {
                                 className="form-control"
                                 value={formData.name}
                                 onChange={handleChange}
-                                placeholder="Name"
+                                placeholder="Enter Name"
                                 required
                             />
                         </div>
+
                         <div className="col-md-6 mb-4">
                             <label className="form-label">Description</label>
                             <input
@@ -165,11 +133,12 @@ function AddCategory() {
                                 className="form-control"
                                 value={formData.description}
                                 onChange={handleChange}
-                                placeholder="Description"
+                                placeholder="Enter Description"
                                 required
                             />
                         </div>
-                        <div className="col-md-6 m-2">
+
+                        <div className="col-md-6 mt-2">
                             <button type="submit" className="btn btn-primary btn-sm">
                                 {id ? "Update" : "Add"}
                             </button>
@@ -182,5 +151,4 @@ function AddCategory() {
         </>
     );
 }
-
 export default AddCategory;

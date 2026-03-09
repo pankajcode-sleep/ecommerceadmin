@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
+import { loginUser } from "../services/api";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
@@ -11,10 +11,7 @@ function Login() {
     email: "",
     password: "",
   });
-
-
-
-
+  
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -22,29 +19,21 @@ function Login() {
     });
   };
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      const response = await axios.post(
-        "https://demo-ecommerce-api.vironixsolutions.com/api/login",
-        formData
-      );
-
+      const response = await loginUser(formData);
       localStorage.setItem("token", response.data.token);
-      localStorage.setItem("tokenExpiry", Date.now() + 15 * 60 * 1000);
-
       toast.success("Login Successful!");
-
       setTimeout(() => {
         navigate("/dashboard");
       }, 1000);
 
-    } catch (err) {
+    } catch (error) {
       toast.error("Invalid Email or Password");
+      console.error(error);
     }
-  }
+  };
 
   return (
     <div className="container mt-5">
@@ -93,6 +82,5 @@ function Login() {
     </div>
   );
 }
-
 
 export default Login;

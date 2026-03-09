@@ -1,25 +1,50 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+import {
+  addCategoryGroup,
+  editCategoryGroup,
+  viewCategoryGroupById,
+  
+} from "../services/api";
+
 function AddItem() {
   const { id } = useParams();
-  console.log(id);
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
   });
 
-  const navigate = useNavigate();
   useEffect(() => {
     const token = localStorage.getItem("token");
+
     if (!token) {
-      toast.error("Please login first ❌");
+      toast.error("Please login first");
       navigate("/login");
-      console.log(success)
+      return;
     }
-  }, []);
+    if (id) {
+      fetchCategory();
+    }
+  }, [id]);
+
+  const fetchCategory = async () => {
+    try {
+      const res = await viewCategoryGroupById(id);
+
+      setFormData({
+        name: res.data.name,
+        description: res.data.description,
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error("Error fetching data");
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -32,87 +57,40 @@ function AddItem() {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem("token");
+      if (id) {
+        await editCategoryGroup(id, formData);
+        toast.success("Item Updated Successfully");
+      } else {
+        await addCategoryGroup(formData);
+        toast.success("Item Added Successfully");
 
-      if(id){
-             const response = await axios.put(
-        `https://demo-ecommerce-api.vironixsolutions.com/api/admin/category/group/${id}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      toast.success("Item Updated Successfully");
-
-      }else{
-             const response = await axios.post(
-        "https://demo-ecommerce-api.vironixsolutions.com/api/admin/category/group",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setFormData({
-        name: "",
-        description: "",
-      });
-      toast.success("Item Added Successfully");
+        setFormData({
+          name: "",
+          description: "",
+        });
       }
 
-      
+      setTimeout(() => {
+        navigate("/view-items");
+      }, 1000);
 
     } catch (error) {
-      toast.error("Error adding item ❌");
+      toast.error("Something went wrong");
       console.error(error);
     }
   };
 
-
-
-  useEffect(() => {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    toast.error("Please login first ❌");
-    navigate("/login");
-    return;
-  }
-  if (id) {
-    axios
-      .get(
-        `https://demo-ecommerce-api.vironixsolutions.com/api/admin/category/group/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-      .then((res) => {
-        setFormData({
-          name: res.data.name,
-          description: res.data.description,
-        });
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  }
-}, [id]);
-
   return (
     <>
-      <div class="card">
-        <div class="card-header">
-          Add Category
+      <div className="card">
+        <div className="card-header">
+          {id ? "Edit Category" : "Add Category"}
         </div>
-        <div class="card-body">
+
+        <div className="card-body">
           <form onSubmit={handleSubmit} className="row">
             <div className="col-md-6 mb-4">
-              <label class="form-label">Name</label>
+              <label className="form-label">Name</label>
               <input
                 type="text"
                 name="name"
@@ -120,11 +98,12 @@ function AddItem() {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Name"
+                required
               />
-              
             </div>
+
             <div className="col-md-6 mb-4">
-              <label class="form-label">Discription</label>
+              <label className="form-label">Description</label>
               <input
                 type="text"
                 name="description"
@@ -132,17 +111,20 @@ function AddItem() {
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Description"
+                required
               />
             </div>
-            <div className="col-md-6 ">
-              <button type="submit" className="btn btn-sm btn-primary">{id ? "Update" : "Add"  }</button>
-            </div>
-    </form >        
-        </div>
 
+            <div className="col-md-6">
+              <button type="submit" className="btn btn-sm btn-primary">
+                {id ? "Update" : "Add"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    
-    <ToastContainer />
+
+      <ToastContainer />
     </>
   );
 }

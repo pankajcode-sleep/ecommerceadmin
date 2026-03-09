@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { MdOutlineDelete } from "react-icons/md";
 import { FaPen } from "react-icons/fa";
-import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Link } from 'react-router-dom';
 import Pagination from "../utils/pagination";
-
+import { viewCategoryGroup , deleteCategoryGroup } from "../services/api";
 
 
 function ViewItems({}) {
@@ -25,44 +24,34 @@ function ViewItems({}) {
   }, []);
 
   const fetchItems = async () => {
-    const token = localStorage.getItem("token");
-
-    try {
-      const response = await fetch("https://demo-ecommerce-api.vironixsolutions.com/api/admin/category/group", 
-         {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-      setItems(data);
-      console.log(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  try {
+    const response = await viewCategoryGroup();
+    setItems(response.data);
+    console.log(response.data);
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to fetch items");
+  }
+};
 
     const handleDelete = async (id) => {
-       const token = localStorage.getItem("token");
-    const confirmDelete = window.confirm("Are you sure you want to delete?");
-    if (!confirmDelete) return;
-    try {
-      await axios.delete(`https://demo-ecommerce-api.vironixsolutions.com/api/admin/category/group/${id}`,{
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },      
-      });
-        
-      setItems(items.filter((item) => item.id !== id));
-     toast.success("Delete Successful!");
-    } catch (error) {
-      console.error("Delete error", error);
-    }
-  };
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete?"
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+    await deleteCategoryGroup(id);
+
+    setItems(items.filter((item) => item.id !== id));
+
+    toast.success("Delete Successful!");
+  } catch (error) {
+    console.error("Delete error", error);
+    toast.error("Delete Failed");
+  }
+};
   
 
   return (
@@ -85,7 +74,7 @@ function ViewItems({}) {
           {items.length > 0 ? (
             currentItems.map((item, index) => (
               <tr key={item.id}>
-                <td>{index + 1}</td>
+                <td>{indexOfFirstItem + index + 1}</td>
                 <td>{item.name}</td>
                 <td>{item.description}</td>
                 <td>
